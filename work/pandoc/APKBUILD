@@ -1,0 +1,59 @@
+# Maintainer: Conor Anderson <conor@conr.ca>
+# Based on Arch Linux pandoc-cabal PKGBUILD by: Johann Klähn <kljohann@gmail.com>
+
+pkgname=pandoc
+subpackages="$pkgname-doc"
+pkgver=1.19.2.4
+pkgrel=0
+pkgdesc="Conversion between markup formats"
+url="http://pandoc.org"
+arch="x86_64"
+license="GPL"
+depends="gmp libffi zlib pcre cmark"
+makedepends="ghc@community cabal@community linux-headers musl-dev gmp-dev zlib-dev"
+source="http://hackage.haskell.org/packages/archive/${pkgname}/${pkgver}/${pkgname}-${pkgver}.tar.gz"
+builddir="$srcdir/$pkgname-$pkgver"
+
+build() {
+  cd "${builddir}"
+
+  cabal sandbox init
+  export PATH="$PWD/.cabal-sandbox/bin:$PATH"
+
+  cabal update
+
+  echo "Building dependencies..."
+  cabal install --user hsb2hs
+  cabal install --user --only-dependencies
+
+  echo "Configuring..."
+  cabal configure -v \
+    --prefix=/usr \
+    --libsubdir='$pkg' \
+    --datasubdir='$pkg' \
+    --docdir='$datadir/doc/$pkg'
+
+  echo "Starting build..."
+  cabal build
+}
+
+package() {
+  cd "${builddir}"
+
+  cabal sandbox init
+  export PATH="$PWD/.cabal-sandbox/bin:$PATH"
+
+  cabal copy --destdir="${pkgdir}/"
+  rm -r "${pkgdir}/usr/lib"
+}
+
+doc() {
+  gzip "${pkgdir}/usr/share/man/man1/pandoc.1"
+  mkdir -p "${subpkgdir}/usr/share/"
+  cp -a -f "${pkgdir}/usr/share/man" "${subpkgdir}/usr/share/"
+  rm -rf "${pkgdir}/usr/share/man"
+  cp -a -f "${pkgdir}/usr/share/doc" "${subpkgdir}/usr/share/"
+  rm -rf "${pkgdir}/usr/share/doc"
+}
+
+sha512sums="34c5f7827ea441bdc0762f82b93dbff80567789ef3e16e6e33e4d3a54f4d50bfd624338142dbc28360fa9fd84a64c5079acb57e56a73673b2aec8459564773a2  pandoc-1.19.2.4.tar.gz"

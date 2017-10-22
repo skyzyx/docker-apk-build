@@ -1,0 +1,62 @@
+# Maintainer: Conor Anderson <conor@conr.ca>
+# Based on Arch Linux pandoc-cabal PKGBUILD by: Johann Klähn <kljohann@gmail.com>
+
+pkgname=pandoc-citeproc
+subpackages="$pkgname-doc"
+pkgver=0.11.1.1
+pkgrel=0
+pkgdesc="Exports functions for using the citeproc system with pandoc"
+url="https://github.com/jgm/pandoc-citeproc"
+arch="x86_64"
+license="BSD3"
+depends="pandoc icu"
+makedepends="ghc@community cabal@community linux-headers musl-dev gmp-dev zlib-dev"
+source="https://hackage.haskell.org/package/${pkgname}-${pkgver}/${pkgname}-${pkgver}.tar.gz"
+builddir="$srcdir/$pkgname-$pkgver"
+
+build() {
+  cd "${builddir}"
+
+  cabal sandbox init
+  export PATH="$PWD/.cabal-sandbox/bin:$PATH"
+
+  cabal update
+
+  echo "Building dependencies..."
+  cabal install --user hsb2hs
+  cabal install --user --only-dependencies
+
+  echo "Configuring..."
+  cabal configure -v \
+    --prefix=/usr \
+    --libsubdir='$pkg' \
+    --datasubdir='$pkg' \
+    --docdir='$datadir/doc/$pkg'
+
+  echo "Starting build..."
+  cabal build
+}
+
+package() {
+  cd "${builddir}"
+
+  cabal sandbox init
+  export PATH="$PWD/.cabal-sandbox/bin:$PATH"
+
+  cabal copy --destdir="${pkgdir}/"
+  rm -r "${pkgdir}/usr/lib"
+}
+
+doc() {
+  rm -rf "${pkgdir}/usr/share/${pkgname}/man"
+  gzip "${pkgdir}/usr/share/man/man1/${pkgname}.1"
+  mkdir -p "${subpkgdir}/usr/share/"
+  cp -a -f "${pkgdir}/usr/share/man" "${subpkgdir}/usr/share/"
+  rm -rf "${pkgdir}/usr/share/man"
+  cp -a -f "${pkgdir}/usr/share/doc" "${subpkgdir}/usr/share/"
+  rm -rf "${pkgdir}/usr/share/doc"
+}
+
+md5sums="c780033c1d502d7847145b5200483c62  pandoc-citeproc-0.10.3.tar.gz"
+sha256sums="2f6233ff91a9fb08edfb0ac2b4ec40729d87590a7c557d0452674dd3c7df4d58  pandoc-citeproc-0.10.3.tar.gz"
+sha512sums="dc6bfa5b0ef80d1e4c57065c3bbfc72f8fd0deed1126772a1b58712623102ba172a47d61795a25217b47cce9fa5e386111a0acdcad9006d9fcfc4535396f9d4b  pandoc-citeproc-0.10.3.tar.gz"

@@ -19,22 +19,11 @@ aports_update: aports
 user.abuild:
 	mkdir -p user.abuild
 
-build: builder target aports
+build: builder target
 	docker run -ti \
 		-v ${PWD}/user.abuild/:/home/packager/.abuild \
-		-v ${PWD}/aports:/work \
+		-v ${PWD}/work:/work \
 		-v ${PWD}/target:/target \
 		-v ${HOME}/.gitconfig/:/home/packager/.gitconfig \
 		apk_builder:${BUILD_ID} \
 		sh
-
-.PHONY: tester
-tester:
-	docker build -t apk_testing:${BUILD_ID} testing/
-
-test: tester target
-	docker run -ti \
-		-v ${PWD}/target:/repo \
-		-v ${PWD}/user.abuild/:/home/abuild/ \
-		--privileged \
-		apk_testing:${BUILD_ID}
